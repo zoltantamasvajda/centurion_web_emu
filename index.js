@@ -69,7 +69,7 @@ async function main() {
             case 0x0c: break; // ??
             case 0x0d: break; // ??
             case 0x0e: // dly Delay 4.5ms
-                sleep(4.5)
+                await sleep(4.5)
                 break;
             case 0x0f: break; // ??
             case 0x10: break; // bcs PC+N Branch if carry set
