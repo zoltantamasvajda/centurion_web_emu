@@ -1,21 +1,37 @@
-var AX = 0x0000, AH = 0x00, AL = 0x00;
-var BX = 0x0000, BH = 0x00, BL = 0x00;
-var RT = 0x0000, RH = 0x00, RL = 0x00;
-var DX = 0x0000, DH = 0x00, DL = 0x00;
-var EX = 0x0000, EH = 0x00, EL = 0x00;
+'use strict';
+const REGISTERS = {
+    A: 0x0000,
+    B: 0x0000,
+    R: 0x0000,
+    D: 0x0000,
+    E: 0x0000
+}
+
+
 var SP = 0x0000;    // Stack Pointer
 var PC = 0xfc00;    // Progran Counter
 var EXTRA;
 
-const REGISTERS = [
-    'A',
-    'B',
-    'R',
-    'D',
-    'E',
-    'SP',
-    'PC'
-]
+function readReg(name) {
+    switch (name[1]) {
+        case 'L':
+            return REGISTERS[name[0]] & 0xFF
+        case 'H':
+            return REGISTERS[name[0]] >> 8
+        default:
+            return REGISTERS[name[0]]
+    }
+}
+function writeReg(name, value) {
+    switch (name[1]) {
+        case 'L':
+            REGISTERS[name[0]] = ((REGISTERS[name[0]] >> 8) << 8) | value
+        case 'H':
+            REGISTERS[name[0]] = value << 8 | (REGISTERS[name[0]] & 0xff)
+        default:
+            REGISTERS[name[0]] = value
+    }
+}
 
 const SENSE_SWITCH = 0b0000
 
@@ -45,6 +61,10 @@ function setFlag(f, v) {
 }
 
 const MEM = new Array(0xFFFF)
+
+function readmem(addr) {
+    return MEM[addr]
+}
 
 const BOOTLOADER = [
     0x1A, 0x02,
@@ -154,11 +174,11 @@ async function main() {
             case 0x2b: break; // not AL Invert byte of implicit AL register
             case 0x2c: // srl AL Shift byte of implicit AL register left
                 {
-                    setFlag(FLAGS.C, AL & 0x01);
-                    setFlag(FLAGS.Z, (AL & 0x00FF) == 0x00);
-                    setFlag(FLAGS.N, AL & 0x0080);
+                    setFlag(FLAGS.C, readReg('AL') & 0x01);
+                    setFlag(FLAGS.Z, (readReg('AL') & 0x00FF) == 0x00);
+                    setFlag(FLAGS.N, readReg('AL') & 0x0080);
 
-                    AL = AL >> 1
+                    writeReg('AL', readReg('AL') >> 1)
 
                     break;
                 }
@@ -214,7 +234,7 @@ async function main() {
             case 0x5e: break; // mov EX, AX Copy byte of one implicit register into other explicit register (AX into EX)
             case 0x5f:      // mov SP, AX Copy byte of one implicit register into other explicit register (AX into SP)
                 {
-                    SP = AX
+                    SP = readReg('AX');
                     break;
                 }
             case 0x60: break; // ld CX, #Imm. Load immediate address into full word CX
@@ -265,12 +285,12 @@ async function main() {
                     PC++
                     //lo
                     SP--
-                    MEM[SP] = RT & 0xFF
+                    MEM[SP] = readReg('RT') & 0xFF
                     //hi
                     SP--
-                    MEM[SP] = RT >> 0x08
+                    MEM[SP] = readReg('RT') >> 0x08
 
-                    RT = PC;
+                    writeReg('RT', PC);
 
                     PC = PC + N
                     break;
@@ -283,7 +303,7 @@ async function main() {
                 {
                     const N = readmem(PC)
                     PC++
-                    AL = N
+                    writeReg('AL', N)
                     break;
                 }
             case 0x81: // ld AL, Addr. Load direct address into byte of AL register
@@ -292,7 +312,7 @@ async function main() {
                     PC++
                     const lo = readmem(PC)
                     PC++
-                    AL = MEM[hi << 8 | lo];
+                    writeReg('AL', MEM[hi << 8 | lo])
                     break;
                 }
             case 0x82: break; // ld AL, [Addr.] Load indirect address into byte of AL register
@@ -315,7 +335,7 @@ async function main() {
                     PC++
                     const lo = readmem(PC)
                     PC++
-                    AX = [hi << 8 | lo];
+                    writeReg('AX', [hi << 8 | lo])
                     break;
                 }
             case 0x91: break; // ld AX, Addr. Load direct address into full word of AX register
@@ -340,7 +360,7 @@ async function main() {
                     PC++
                     const lo = readmem(PC)
                     PC++
-                    MEM[hi << 8 | lo] = AL
+                    MEM[hi << 8 | lo] = readReg('AL')
                     break;
                 }
             case 0xa2: break; // st AL, [Addr.] Store byte of AL register into indirect address
@@ -447,10 +467,6 @@ async function main() {
 
 }
 
-function readmem(addr) {
-    return MEM[addr]
-}
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -478,14 +494,14 @@ function setup() {
 
     }
 
-    for (let register of REGISTERS) {
+    for (let register in REGISTERS) {
         const label = document.createElement('div');
         const textnode = document.createTextNode(register);
         label.appendChild(textnode);
         const valueLo = document.createElement('div');
-        valueLo.id = register + 'L'
+        valueLo.id = register + 'Lo'
         const valueHi = document.createElement('div');
-        valueHi.id = register + 'H'
+        valueHi.id = register + 'Hi'
         registersDiv.appendChild(label);
         registersDiv.appendChild(valueHi);
         registersDiv.appendChild(valueLo);
@@ -497,15 +513,10 @@ function draw() {
         const flagDiv = document.getElementById(flag);
         flagDiv.innerHTML = getFlag(FLAGS[flag])
     }
-    for (let register of REGISTERS) {
-        const registerDivLo = document.getElementById(register + 'L');
-        const registerDivHi = document.getElementById(register + 'H');
-        if (register !== 'SP' && register !== 'PC') {
-            registerDivLo.innerHTML = '0x' + this[register + 'L'].toString(16)
-            registerDivHi.innerHTML = '0x' + this[register + 'H'].toString(16)
-        } else {
-            registerDivLo.innerHTML = '0x' + (this[register] & 0xFF).toString(16)
-            registerDivHi.innerHTML = '0x' + (this[register] >> 8).toString(16)
-        }
+    for (let register in REGISTERS) {
+        const registerDivLo = document.getElementById(register + 'Lo');
+        const registerDivHi = document.getElementById(register + 'Hi');
+        registerDivLo.innerHTML = '0x' + (readReg(register) & 0xff).toString(16)
+        registerDivHi.innerHTML = '0x' + (readReg(register) >> 8).toString(16)
     }
 }
