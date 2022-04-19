@@ -1,0 +1,27 @@
+body {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+}
+
+#log {
+    width: 50%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+#status {
+    width: 50%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+#flags {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+#registers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}

@@ -1,13 +1,48 @@
-let AX, AH, AL;
-let BX, BH, BL;
-let RT, RH, RL;
-let DX, DH, DL;
-let EX, EH, EL;
-let SP = 0x0000;    // Stack Pointer
-let PC = 0xfc00;    // Progran Counter
-let EXTRA;
+var AX = 0x0000, AH = 0x00, AL = 0x00;
+var BX = 0x0000, BH = 0x00, BL = 0x00;
+var RT = 0x0000, RH = 0x00, RL = 0x00;
+var DX = 0x0000, DH = 0x00, DL = 0x00;
+var EX = 0x0000, EH = 0x00, EL = 0x00;
+var SP = 0x0000;    // Stack Pointer
+var PC = 0xfc00;    // Progran Counter
+var EXTRA;
 
-let SENSE_SWITCH = 0b00000000
+const REGISTERS = [
+    'A',
+    'B',
+    'R',
+    'D',
+    'E',
+    'SP',
+    'PC'
+]
+
+const SENSE_SWITCH = 0b0000
+
+let STATUS = 0x00
+
+const FLAGS =
+{
+    C: (1 << 0),	// Carry Bit
+    Z: (1 << 1),	// Zero
+    I: (1 << 2),	// Disable Interrupts
+    D: (1 << 3),	// Decimal Mode (unused in this implementation)
+    B: (1 << 4),	// Break
+    U: (1 << 5),	// Unused
+    V: (1 << 6),	// Overflow
+    N: (1 << 7),	// Negative
+};
+
+function getFlag(f) {
+    return ((STATUS & f) > 0) ? 1 : 0;
+}
+
+function setFlag(f, v) {
+    if (v)
+        STATUS |= f;
+    else
+        STATUS &= ~f;
+}
 
 const MEM = new Array(0xFFFF)
 
@@ -45,6 +80,7 @@ for (let i = 0; i < BOOTLOADER.length; i++) {
 main();
 
 async function main() {
+    setup();
     let halt = false
     while (!halt) {
         const opcode = readmem(PC)
@@ -69,11 +105,19 @@ async function main() {
             case 0x0c: break; // ??
             case 0x0d: break; // ??
             case 0x0e: // dly Delay 4.5ms
-                await sleep(4.5)
+                sleep(4.5)
                 break;
             case 0x0f: break; // ??
             case 0x10: break; // bcs PC+N Branch if carry set
-            case 0x11: break; // bcc PC+N Branch if carry clear
+            case 0x11:       // bcc PC+N Branch if carry clear
+                {
+                    var N = readmem(PC)
+                    PC++
+                    if (!getFlag(FLAGS.C)) {
+                        PC = PC + N
+                    }
+                    break;
+                }
             case 0x12: break; // bns PC+N Branch if negative set
             case 0x13: break; // bnc PC+N Branch if negative clear
             case 0x14: break; // bzs PC+N Branch if zero set (Branch if equal)
@@ -108,12 +152,17 @@ async function main() {
             case 0x29: break; // dec AL Decrement byte of implicit AL register
             case 0x2a: break; // clr AL Clear byte of implicit AL register
             case 0x2b: break; // not AL Invert byte of implicit AL register
-            case 0x2c: // lsl AL Shift byte of implicit AL register left
+            case 0x2c: // srl AL Shift byte of implicit AL register left
                 {
-                    AL = AL << 1
+                    setFlag(FLAGS.C, AL & 0x01);
+                    setFlag(FLAGS.Z, (AL & 0x00FF) == 0x00);
+                    setFlag(FLAGS.N, AL & 0x0080);
+
+                    AL = AL >> 1
+
                     break;
                 }
-            case 0x2d: break; // lsr AL Shift byte of implicit AL register right
+            case 0x2d: break; // sll AL Shift byte of implicit AL register right
             case 0x2e: break; // Memory mapping?
             case 0x2f: break; // DMA
             case 0x30: break; // inc _X Increment full word of explicit register
@@ -215,10 +264,12 @@ async function main() {
                     const N = readmem(PC)
                     PC++
 
-                    MEM[SP] = PC >> 8
+                    MEM[SP] = RT >> 0x08
                     SP++
-                    MEM[SP + 1] = PC & 0xFF
+                    MEM[SP + 1] = RT & 0xFF
                     SP++
+
+                    RT = PC;
 
                     PC = PC + N
                     break;
@@ -388,6 +439,7 @@ async function main() {
             default:
                 break;
         }
+        draw();
         await sleep(1000)
     }
     log("Halted")
@@ -410,21 +462,49 @@ function log(message) {
     logDiv.appendChild(newDiv);
 }
 
-function initMem() {
-    const memDiv = document.getElementById('mem')
+function setup() {
+    const flagsDiv = document.getElementById('flags')
+    const registersDiv = document.getElementById('registers')
+    //Flags
+    for (let flag in FLAGS) {
+        const label = document.createElement('div');
+        const textnode = document.createTextNode(flag);
+        label.appendChild(textnode);
+        const value = document.createElement('div');
+        value.id = flag
+        flagsDiv.appendChild(label);
+        flagsDiv.appendChild(value);
 
-    for (let i = 0; i < MEM.length; i++) {
-        const newDiv = document.createElement('div');
-        newDiv.id = i.toString(16);
-        const textnode = document.createTextNode(i.toString(16));
-        newDiv.appendChild(textnode);
-        mem.appendChild(newDiv);
+    }
+
+    for (let register of REGISTERS) {
+        const label = document.createElement('div');
+        const textnode = document.createTextNode(register);
+        label.appendChild(textnode);
+        const valueLo = document.createElement('div');
+        valueLo.id = register + 'L'
+        const valueHi = document.createElement('div');
+        valueHi.id = register + 'H'
+        registersDiv.appendChild(label);
+        registersDiv.appendChild(valueHi);
+        registersDiv.appendChild(valueLo);
     }
 }
 
-function updateMem() {
-    for (let i = 0; i < MEM.length; i++) {
-        const div = document.getElementById(i.toString(16))
-        div.innerHTML = MEM[i] ? MEM[i].toString(16) : "00"
+function draw() {
+    for (let flag in FLAGS) {
+        const flagDiv = document.getElementById(flag);
+        flagDiv.innerHTML = getFlag(FLAGS[flag])
+    }
+    for (let register of REGISTERS) {
+        const registerDivLo = document.getElementById(register + 'L');
+        const registerDivHi = document.getElementById(register + 'H');
+        if (register !== 'SP' && register !== 'PC') {
+            registerDivLo.innerHTML = '0x' + this[register + 'L'].toString(16)
+            registerDivHi.innerHTML = '0x' + this[register + 'H'].toString(16)
+        } else {
+            registerDivLo.innerHTML = '0x' + (this[register] & 0xFF).toString(16)
+            registerDivHi.innerHTML = '0x' + (this[register] >> 8).toString(16)
+        }
     }
 }
