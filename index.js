@@ -10,7 +10,8 @@ const REGISTERS = {
 
 var SP = 0x0000;    // Stack Pointer
 var PC = 0xfc00;    // Progran Counter
-var EXTRA;
+
+const SENSE_SWITCH = 0b0000
 
 function readReg(name) {
     switch (name[1]) {
@@ -33,32 +34,26 @@ function writeReg(name, value) {
     }
 }
 
-const SENSE_SWITCH = 0b0000
-
-let STATUS = 0x00
-
 const FLAGS =
 {
-    C: (1 << 0),	// Carry Bit
-    Z: (1 << 1),	// Zero
-    I: (1 << 2),	// Disable Interrupts
-    D: (1 << 3),	// Decimal Mode (unused in this implementation)
-    B: (1 << 4),	// Break
-    U: (1 << 5),	// Unused
-    V: (1 << 6),	// Overflow
-    N: (1 << 7),	// Negative
+    C: false,	// Carry Bit
+    Z: false,	// Zero
+    I: false,	// Disable Interrupts
+    D: false,	// Decimal Mode (unused in this implementation)
+    B: false,	// Break
+    U: false,	// Unused
+    V: false,	// Overflow
+    N: false,	// Negative
 };
 
-function getFlag(f) {
-    return ((STATUS & f) > 0) ? 1 : 0;
+function getFlag(flag) {
+    return FLAGS[flag];
 }
 
-function setFlag(f, v) {
-    if (v)
-        STATUS |= f;
-    else
-        STATUS &= ~f;
+function setFlag(flag, value) {
+    FLAGS[flag] = Boolean(value)
 }
+
 
 const MEM = new Array(0xFFFF)
 
@@ -133,7 +128,7 @@ async function main() {
                 {
                     var N = readmem(PC)
                     PC++
-                    if (!getFlag(FLAGS.C)) {
+                    if (!getFlag('C')) {
                         PC = PC + N
                     }
                     break;
@@ -174,9 +169,9 @@ async function main() {
             case 0x2b: break; // not AL Invert byte of implicit AL register
             case 0x2c: // srl AL Shift byte of implicit AL register left
                 {
-                    setFlag(FLAGS.C, readReg('AL') & 0x01);
-                    setFlag(FLAGS.Z, (readReg('AL') & 0x00FF) == 0x00);
-                    setFlag(FLAGS.N, readReg('AL') & 0x0080);
+                    setFlag('C', readReg('AL') & 0x01);
+                    setFlag('Z', (readReg('AL') & 0x00FF) == 0x00);
+                    setFlag('N', readReg('AL') & 0x0080);
 
                     writeReg('AL', readReg('AL') >> 1)
 
@@ -511,7 +506,7 @@ function setup() {
 function draw() {
     for (let flag in FLAGS) {
         const flagDiv = document.getElementById(flag);
-        flagDiv.innerHTML = getFlag(FLAGS[flag])
+        flagDiv.innerHTML = getFlag(flag)
     }
     for (let register in REGISTERS) {
         const registerDivLo = document.getElementById(register + 'Lo');
