@@ -472,6 +472,7 @@ function log(message) {
     const textnode = document.createTextNode(message);
     newDiv.appendChild(textnode);
     logDiv.appendChild(newDiv);
+    logDiv.scrollTo(0, logDiv.scrollHeight)
 }
 
 function setup() {
