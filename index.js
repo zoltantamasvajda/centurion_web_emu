@@ -99,7 +99,7 @@ async function main() {
     let halt = false
     while (!halt) {
         const opcode = readmem(PC)
-        log("0x" + PC.toString(16) + " 0x" + opcode.toString(16))
+        log("0x" + PC.toString(16).padStart(2, '0') + " 0x" + opcode.toString(16).padStart(2, '0'))
         PC++
         switch (opcode) {
             case 0x00:// hlt Halts the CPU AX/AH/AL
@@ -484,8 +484,10 @@ function setup() {
         label.appendChild(textnode);
         const value = document.createElement('div');
         value.id = flag
+        const spacer = document.createElement('div');
         flagsDiv.appendChild(label);
         flagsDiv.appendChild(value);
+        flagsDiv.appendChild(spacer);
 
     }
 
@@ -511,7 +513,7 @@ function draw() {
     for (let register in REGISTERS) {
         const registerDivLo = document.getElementById(register + 'Lo');
         const registerDivHi = document.getElementById(register + 'Hi');
-        registerDivLo.innerHTML = '0x' + (readReg(register) & 0xff).toString(16)
-        registerDivHi.innerHTML = '0x' + (readReg(register) >> 8).toString(16)
+        registerDivLo.innerHTML = '0x' + (readReg(register) & 0xff).toString(16).padStart(2, '0')
+        registerDivHi.innerHTML = '0x' + (readReg(register) >> 8).toString(16).padStart(2, '0')
     }
 }
