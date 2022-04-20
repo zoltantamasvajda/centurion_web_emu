@@ -35,6 +35,26 @@ body {
     overflow-y: hidden;
 }
 
+#log>div {
+    display: flex;
+    align-items: flex-start;
+}
+
+#log>div:last-child::after {
+    content: "█";
+    display: inline;
+    animation: blink 300ms steps(1) infinite;
+    font-size: 0.66rem;
+}
+
+@keyframes blink {
+    50% {
+        color: transparent;
+        text-shadow: none;
+    }
+}
+
+
 #status {
     width: 50%;
     height: 100%;

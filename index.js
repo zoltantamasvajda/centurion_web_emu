@@ -313,7 +313,10 @@ async function main() {
             case 0x82: break; // ld AL, [Addr.] Load indirect address into byte of AL register
             case 0x83: break; // ld AL, PC+N Load direct Program Counter offset by N address into byte of AL register
             case 0x84: break; // ld AL, [PC+N] Load indirect Program Counter offset by N address into byte of AL register
-            case 0x85: break; // ld AL, _[R]_ Load indexed register into byte of AL register
+            case 0x85:     // ld AL, _[R]_ Load indexed register into byte of AL register
+                {
+                    break;
+                }
             case 0x86: break; //
             case 0x87: break; //
             case 0x88: break; // ld AL, [AX] Load byte from memory address stored in AX into AL register
