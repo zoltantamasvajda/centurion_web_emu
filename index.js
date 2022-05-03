@@ -512,7 +512,7 @@ async function main() {
                 break;
         }
         draw();
-        await sleep(500)
+        await sleep(1/5000)
     }
     log("Halted")
 

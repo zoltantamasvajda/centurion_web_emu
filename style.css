@@ -1,32 +1,99 @@
 body {
-    margin: auto;
+    width: 100vw;
+    height: 100vh;
+    
     box-sizing: border-box;
-    text-transform: uppercase;
     background-color: #BFBEB3;
-    padding: 1rem;
+    overflow: hidden;
 }
 
+.left {
+    z-index: 0;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    width: 2rem;
+    height: 58rem;
+    background-color: #4993bb;
+    border-radius: 50%;
+}
+.mid {
+    z-index: 10;
+    position: absolute;
+    top: 1rem;
+    left: 2rem;
+    width: 62rem;
+    height: 58rem;
+    background-color: #4993bb;
+
+
+}
+.right {
+    z-index: 0;
+    position: absolute;
+    top: 1rem;
+    left: 63rem;
+    width: 2rem;
+    height: 58rem;
+    background-color: #4993bb;
+    border-radius: 50%;
+}
+
+.bottom {
+    z-index: 20;
+    position: absolute;
+    top: 29rem;
+    left: 1rem;
+    width: 64rem;
+    bottom: 0;
+    background-color: #4993bb;
+    border-top: black solid 1px;
+}
+
+
 .bezel {
-    width: 80ch;
-    height: 60ch;
+    z-index: 20;
+    position: absolute;
+    top: 2rem;
+    left: 3rem;
+    width: 60rem;
+    height: auto;
     box-sizing: border-box;
-    padding: 2rem;
-    background-color: #68B0CF;
-    border-radius: 1rem;
+    padding: 0.5rem;
+    background-color: #4993bb;
+    border-radius: 1.5rem;
+    display: flex;
+    flex-direction: row;
+    box-shadow: 0 0 0.5rem #000000;
 }
 
 .crt {
+    text-transform: uppercase;
     font-family: 'CenturionTerm81', Fallback, monospace;
-    background-color: #8A847C;
-    color: #F1F9FF;
-    width: 100%;
-    height: 100%;
+    background-color: #191d1c;
+    color: #a8c1d7;
+    width: 32rem;
+    height: 24rem;
     display: flex;
-    box-sizing: border-box;
     padding: 1rem;
-    box-shadow: inset 0 0 1rem #000000;
+    box-shadow: inset 0 0 0.5rem #000000;
     border-radius: 1rem;
     position: relative;
+    flex-shrink: 0;
+}
+
+#logo {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 1rem #000000;
+    border-radius: 1rem;
+    margin-left: 0.5rem;
+}
+
+#logo>img {
+    height: 4rem;
 }
 
 #mux {
@@ -37,8 +104,13 @@ body {
 
 #log {
     width: 100%;
-    height: 100%;
+    height: 5rem;
     overflow-y: hidden;
+}
+
+#log>div {
+    height: 1rem;
+    line-height: 1rem;
 }
 
 #mux {
@@ -50,7 +122,7 @@ body {
     content: "█";
     display: inline;
     animation: blink 300ms steps(1) infinite;
-    font-size: 0.66rem;
+    font-size: 0.75rem;
 }
 
 @keyframes blink {
@@ -78,6 +150,7 @@ body {
 #registers {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
+    margin-bottom: 1rem;
 }
 
 @font-face {
